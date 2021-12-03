@@ -1,3 +1,3 @@
-## InfoVis Assgn3
+## InfoVis Assn3
 
 
