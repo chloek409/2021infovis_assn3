@@ -1,12 +1,10 @@
 import React from "react";
+import AxisView from './components/AxisView';
 import "./App.css";
 
 
 function App() {
 
-  const name = "Sohyun Kim";
-  const studentNum = "2021-25515";
-  
   const width = 500;
   const height = 350;
   const margin = 35;
@@ -15,13 +13,8 @@ function App() {
 
   return (
     <div className="App">
-      <div style={{display: "flex"}}>
-        <h1 style={{marginRight: 10}}>
-        {"Assignment #2 /"}
-        </h1>
-        <h2 style={{marginTop: 25}}>
-          {name + " (" + studentNum + ")"}
-        </h2>
+      <div>
+        <AxisView />
       </div>
     </div>
   );
