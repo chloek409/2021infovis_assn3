@@ -106,7 +106,7 @@ const AxisView = (props) => {
                             .attr('height', legendViewEdge)
                             .attr('stroke', '#767474');
         
-        const space=15;
+        const space=10;
         svg.append("text")
                 .attr("transform", `translate(${margin}, ${svgHeight-legendViewEdge+space})`)
                 .classed('legendText', true)
@@ -120,18 +120,12 @@ const AxisView = (props) => {
                 .classed('legendText', true)
                 .text("False Neighbors")
         svg.append("text")
-                .attr("transform", `translate(${space}, ${svgHeight-space})`)
+                .attr("transform", `translate(${3*space}, ${svgHeight-space})`)
                 .classed('legendText', true)
-                .text("No Distortions")
-
-        svg.selectAll('.legendText')
-        .attr('fill', 'white')
-        .attr('font-size', 11)
-        .attr('font-family', 'Times New Roman');
+                .text("No Distortions");
+        svg.selectAll('.legendText').attr('font-size', 11);
                 
         
-
-
         /* Enable mouse drag. */
         const drag = d3.drag()
                .on("start", function(event, d){d3.select(this).raise().classed("active", true);})
@@ -141,14 +135,17 @@ const AxisView = (props) => {
 
 
         function dragged(event, d) {
+            d3.selectAll('.moved').remove();
+
             d3.select(this).raise().classed("active", true);
             var x = event.x-svgWidth/2;
             var y = event.y-svgWidth/2;
             var newAngle = Math.atan2( y , x ) * 180 / Math.PI ; //radian to degree
   	        // if(newAngle<0) newAngle = 360 + newAngle;
             console.log(newAngle)
-            d3.select(this).attr('transform', `rotate(${newAngle})`)
-                            .attr('transform', `translate(0, 0)`).attr("cx", event.x).attr("cy", event.y);
+            d3.select(this)
+                            .attr('transform', `translate(0, 0)`).attr("cx", event.x).attr("cy", event.y)
+                            .classed('moved', true);
 
             let lineClass = String(d3.select(this).attr('class'));
             lineClass = lineClass.split(' ')[0];

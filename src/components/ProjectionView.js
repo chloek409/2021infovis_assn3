@@ -12,29 +12,36 @@ const ProjectionView = (props) => {
     const attributeIdx = props.attrIndex;
     const attributeVec = props.attrVector;
     
-    const width = 500;
-    const height = 600;
+    const width = 450;
+    const height = 550;
     const margin = 20;
     const svgWidth = width + margin;
-    const svgHeight = height + margin;
+    const svgHeight = height + margin+10;
+    const scatterplotSvg = useRef(null);
+
 
     const sortedByAttr = [];
     attr.forEach((d)=>sortedByAttr.push(new Array()));
-    console.log(sortedByAttr);
 
-    const scatterplotSvg = useRef(null);
     const rawData = raw;
     rawData.forEach(function(arr, i) {
-        arr.forEach((d,i)=>sortedByAttr[i].push(d))
+        arr.forEach((d,i)=>sortedByAttr[i].push(d*0.19))
     })
-    console.log(sortedByAttr);
+    //sortedByAttr= [ [raw values of attr0],[raw values of attr1], ... ,[raw values of attr8]]
+    
+    const projected = [];
+    const [projectedData, setProjectedData] = useState([]);
+    rawData.forEach(function(d) {
+        d[attributeIdx] = 0;
+        projected.push(d);
+    });
+    console.log(projected)
 
 
     useEffect(()=>{
         const plotData = sortedByAttr[0];
-        const plotData_X = plotData.map(x=>x*4);
-        console.log(plotData_X)
-        const plotData_Y = plotData.map(x=>x*1);
+        const plotData_X = plotData.map(x=>x*(attributeVec[0]-165)/330);
+        const plotData_Y = plotData.map(y=>y*(attributeVec[1]-165)/330);
 
         let xScale = d3.scaleLinear().domain(
             [d3.min(plotData_X, d=>d), d3.max(plotData_X, d=>d)])
@@ -44,16 +51,13 @@ const ProjectionView = (props) => {
             [d3.min(plotData_Y, d=>d), d3.max(plotData_Y, d=>d)])
             .range([0,height]);
 
-        let xAxis = d3.axisBottom(xScale);
-        let yAxis = d3.axisLeft(yScale);
-
         const svg = d3.select(scatterplotSvg.current);
-
         svg.append('g')
             .selectAll('circle')
             .data(plotData)
             .join('circle')
             .classed('scatters', true)
+            .attr('transform', `translate(${margin}, ${margin})`)
             .attr('r', 2)
             .attr('cx', d=>xScale(d))
             .attr('cy', d=>yScale(d))
@@ -66,9 +70,8 @@ const ProjectionView = (props) => {
     useEffect(()=>{
                 
         const plotData = sortedByAttr[attributeIdx];
-        const plotData_X = plotData.map(x=>x*4);
-        console.log(plotData_X);
-        const plotData_Y = plotData.map(x=>x*1);
+        const plotData_X = plotData.map(x=>x*(attributeVec[0]-165)/330);
+        const plotData_Y = plotData.map(y=>y*(attributeVec[1]-165)/330);
 
         let xScale = d3.scaleLinear().domain(
             [d3.min(plotData_X, d=>d), d3.max(plotData_X, d=>d)])
@@ -78,13 +81,7 @@ const ProjectionView = (props) => {
             [d3.min(plotData_Y, d=>d), d3.max(plotData_Y, d=>d)])
             .range([0,height]);
 
-        let xAxis = d3.axisBottom(xScale);
-        let yAxis = d3.axisLeft(yScale);
-
         const svg = d3.select(scatterplotSvg.current);
-        // svg.append('g').attr('transform', `translate(${props.margin}, ${svgHeight-props.margin})`).classed("xAxis", true).call(xAxis);
-        // svg.append('g').attr('transform', `translate(${props.margin}, ${props.margin})`).classed("yAxis", true).call(yAxis);
-
         svg.selectAll('circle')
             .data(plotData)
             .join('circle')
@@ -93,7 +90,7 @@ const ProjectionView = (props) => {
             .attr('cy', d=>yScale(d))
             .attr('fill', 'white')
             .attr('stroke', "black");
-            
+
     }, [attributeIdx, attributeVec]);
 
     const [buttonClicked, setButtonClicked]=useState(false);
@@ -101,18 +98,31 @@ const ProjectionView = (props) => {
     const texts = ["Enable Checkviz!!", "Disable Checkviz!!"];
     const [buttonText, setButtonText]=useState(texts[0]);
 
+    const svg = d3.select(scatterplotSvg.current);
     function handleOnClick() {
         if(!buttonClicked) {
             setButtonClicked(true);
             setButtonText(texts[1]);
-            const dic = tnc(raw, raw);
+            /* Enable Checkviz:
+                1) tnc func로 각 data point에 대한 trustworthiness/continuity값을 구함.
+                2) 각 data point의 trustworthiness/continuity값에 해당하는 color를 구함.
+                3) data point의 Voronoi cell을 그리고, polygon 색상을 2)의 결과로 지정
+            */
+                svg.selectAll('g')
+                .append('rect')
+                .attr('width', 10)
+                .attr('height', 10)
+                .attr('transform', `translate(100,100)`)
+                .attr('stroke', "black");
+            const dic = tnc(rawData, rawData);
             console.log(dic)
-            // console.log(colormap(dic.trust, dic.conti));
 
         }
         else {
             setButtonClicked(false);
             setButtonText(texts[0]);
+            svg.selectAll('rect').remove();
+        
         }
     }
 
