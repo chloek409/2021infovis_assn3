@@ -11,7 +11,7 @@ const ProjectionView = (props) => {
    
     const attributeIdx = props.attrIndex;
     const attributeVec = props.attrVector;
-    
+    console.log(attributeVec);
     const width = 450;
     const height = 550;
     const margin = 20;
@@ -19,36 +19,29 @@ const ProjectionView = (props) => {
     const svgHeight = height + margin+10;
     const scatterplotSvg = useRef(null);
 
-
-    const sortedByAttr = [];
-    attr.forEach((d)=>sortedByAttr.push(new Array()));
-
-    const rawData = raw;
-    rawData.forEach(function(arr, i) {
-        arr.forEach((d,i)=>sortedByAttr[i].push(d*0.19))
-    })
-    //sortedByAttr= [ [raw values of attr0],[raw values of attr1], ... ,[raw values of attr8]]
+    const divisor = Math.sqrt((attributeVec[0]*attributeVec[0] + attributeVec[1]*attributeVec[1]));
+    const unitvec_x= Math.abs(attributeVec[0])/divisor;
+    const unitvec_y = Math.abs(attributeVec[1])/divisor;
+    console.log(unitvec_x, unitvec_y);
+    const plotData = [];
+    raw.forEach((arr, i)=> plotData.push([unitvec_x*d3.sum(arr), unitvec_y*d3.sum(arr)]) );
     
     const projected = [];
     const [projectedData, setProjectedData] = useState([]);
-    rawData.forEach(function(d) {
+    raw.forEach(function(d) {
         d[attributeIdx] = 0;
         projected.push(d);
     });
-    console.log(projected)
 
 
     useEffect(()=>{
-        const plotData = sortedByAttr[0];
-        const plotData_X = plotData.map(x=>x*(attributeVec[0]-165)/330);
-        const plotData_Y = plotData.map(y=>y*(attributeVec[1]-165)/330);
 
         let xScale = d3.scaleLinear().domain(
-            [d3.min(plotData_X, d=>d), d3.max(plotData_X, d=>d)])
+            [d3.min(plotData, d=>d[0]), d3.max(plotData, d=>d[0])])
             .range([0,width]);
 
         let yScale = d3.scaleLinear().domain(
-            [d3.min(plotData_Y, d=>d), d3.max(plotData_Y, d=>d)])
+            [d3.min(plotData, d=>d[1]), d3.max(plotData, d=>d[1])])
             .range([0,height]);
 
         const svg = d3.select(scatterplotSvg.current);
@@ -59,8 +52,8 @@ const ProjectionView = (props) => {
             .classed('scatters', true)
             .attr('transform', `translate(${margin}, ${margin})`)
             .attr('r', 2)
-            .attr('cx', d=>xScale(d))
-            .attr('cy', d=>yScale(d))
+            .attr('cx', d=>xScale(d[0]))
+            .attr('cy', d=>yScale(d[1]))
             .attr('fill', 'white')
             .attr('stroke', "black");
         
@@ -69,16 +62,12 @@ const ProjectionView = (props) => {
 
     useEffect(()=>{
                 
-        const plotData = sortedByAttr[attributeIdx];
-        const plotData_X = plotData.map(x=>x*(attributeVec[0]-165)/330);
-        const plotData_Y = plotData.map(y=>y*(attributeVec[1]-165)/330);
-
         let xScale = d3.scaleLinear().domain(
-            [d3.min(plotData_X, d=>d), d3.max(plotData_X, d=>d)])
+            [d3.min(plotData, d=>d[0]), d3.max(plotData, d=>d[0])])
             .range([0,width]);
 
         let yScale = d3.scaleLinear().domain(
-            [d3.min(plotData_Y, d=>d), d3.max(plotData_Y, d=>d)])
+            [d3.min(plotData, d=>d[1]), d3.max(plotData, d=>d[1])])
             .range([0,height]);
 
         const svg = d3.select(scatterplotSvg.current);
@@ -86,8 +75,8 @@ const ProjectionView = (props) => {
             .data(plotData)
             .join('circle')
             .transition()
-            .attr('cx', d=>xScale(d))
-            .attr('cy', d=>yScale(d))
+            .attr('cx', d=>xScale(d[0]))
+            .attr('cy', d=>yScale(d[1]))
             .attr('fill', 'white')
             .attr('stroke', "black");
 
@@ -108,13 +97,27 @@ const ProjectionView = (props) => {
                 2) 각 data point의 trustworthiness/continuity값에 해당하는 color를 구함.
                 3) data point의 Voronoi cell을 그리고, polygon 색상을 2)의 결과로 지정
             */
-                svg.selectAll('g')
-                .append('rect')
-                .attr('width', 10)
-                .attr('height', 10)
-                .attr('transform', `translate(100,100)`)
-                .attr('stroke', "black");
-            const dic = tnc(rawData, rawData);
+
+            let voronoi = d3.Delaunay
+                .from(plotData, d => d[0], d => d[1])
+                .voronoi([0, 0, width, height]);
+
+            const mesh = svg.selectAll('what')
+                .append("path")
+                .attr("fill", "none")
+                .attr("stroke", "black")
+                .attr("stroke-width", 1)
+                .attr("d", voronoi.render());
+            
+                const cell = svg.append("g")
+                .attr("fill", "none")
+                .attr("pointer-events", "all")
+              .selectAll("path")
+              .data(plotData)
+              .join("path")
+                .attr("d", (d, i) => voronoi.renderCell(i))
+
+            const dic = tnc(raw, plotData);
             console.log(dic)
 
         }

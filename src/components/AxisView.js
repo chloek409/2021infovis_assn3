@@ -23,15 +23,14 @@ const AxisView = (props) => {
     const axisViewSvg = useRef(null);
     
     const [attrIdx, setAttrIdx] = useState(0);
-    const [attrVec, setAttrVec] = useState([svgWidth/2+radius*Math.cos(0), svgWidth/2 + radius*Math.sin(0)]);
+    const [attrVec, setAttrVec] = useState([1,1]);
 
     function degrees_to_radians(degrees) {
         var pi = Math.PI;
         return degrees * (pi/180);
     }
 
-    // var angularScale = d3.scale.linear().range([0,360]).domain([0,total]);
-
+    
     useEffect(()=>{
         const svg = d3.select(axisViewSvg.current);
 
@@ -99,12 +98,14 @@ const AxisView = (props) => {
         }
         svg.selectAll('.axis').attr('font-size', 12).attr('font-family', 'Times New Roman');
         
-        const legendView = svg.append("rect")
+        const legendView = svg
+                            // .data(arr)
+                            // .enter()
+                            .append('rect')
                             .classed('legendView', true)
                             .attr("transform", `translate(${margin}, ${svgHeight-legendViewEdge})`)
                             .attr('width', legendViewEdge)
                             .attr('height', legendViewEdge)
-                            .attr('stroke', '#767474');
         
         const space=10;
         svg.append("text")
@@ -130,8 +131,7 @@ const AxisView = (props) => {
         const drag = d3.drag()
                .on("start", function(event, d){d3.select(this).raise().classed("active", true);})
                .on("drag", dragged)
-               .on("end",  function(event, d) {d3.select(this).classed("active", false);
-                                                setAttrVec([event.x, event.y])} );
+               .on("end",  function(event, d) {d3.select(this).classed("active", false);} );
 
 
         function dragged(event, d) {
@@ -152,7 +152,10 @@ const AxisView = (props) => {
 
             d3.select('line.'+lineClass).attr('transform', `rotate(${newAngle})`)
             .attr('transform', `translate(0, 0)`).attr("x2", event.x).attr("y2",event.y);
-            setAttrIdx(Number(lineClass.substr(-1)));
+            let idx = Number(lineClass.substr(-1));
+            d3.select('.circledAxisText'+idx);
+            setAttrIdx(idx);
+            setAttrVec([event.x-165, event.y-165]);
         } 
 
         svg.selectAll('.axis').call(drag);
