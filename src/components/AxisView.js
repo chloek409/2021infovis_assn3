@@ -98,7 +98,7 @@ const AxisView = (props) => {
         }
         svg.selectAll('.axis').attr('font-size', 12).attr('font-family', 'Times New Roman');
         
-        const legendView = svg
+        const legendView = svg.selectAll('rect')
                             // .data(arr)
                             // .enter()
                             .append('rect')
